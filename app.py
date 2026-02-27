@@ -240,7 +240,6 @@ if search_button:
                             <p><strong>Name:</strong> {row['Student Name']}</p>
                             <p><strong>USN:</strong> {row['USN']}</p>
                             <p><strong>SGPA:</strong> {row['SGPA']}</p>
-                            <p><strong>Semester:</strong> {row['Semester']}</p>
                             <p><strong>Last Updated:</strong> {row['Timestamp']}</p>
                         </div>
                     """, unsafe_allow_html=True)
@@ -254,3 +253,4 @@ if search_button:
         except Exception as e:
             st.error("Could not retrieve data.")
             st.write(e)
+
