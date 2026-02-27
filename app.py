@@ -32,12 +32,12 @@ st.markdown("""
             font-size: 16px;
             margin-top: 0px;
         ">
-            Semester 1 Academic Performance Dashboard
+            Semester 2 Academic Performance Dashboard
         </p>
     </div>
 """, unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("Upload VTU Semester 1 Result PDF", type=["pdf"])
+uploaded_file = st.file_uploader("Upload VTU Semester 2 Result PDF", type=["pdf"])
 
 # ---------------- GOOGLE SHEETS CONNECTION ----------------
 def connect_to_gsheet():
@@ -73,7 +73,7 @@ def extract_data_from_pdf(pdf_file):
     student_name = name_match.group(1).strip() if name_match else "Not Found"
     usn = usn_match.group(1).strip() if usn_match else "Not Found"
 
-    pattern = r"(BMATE101|BCHEE102|BCEDK103|BENGK106|BICOK107|BIDTK158|BESCK104E|BETCK105J).*?(\d+)\s+(\d+)\s+(\d+)\s+([PF])\s+\d{4}-\d{2}-\d{2}"
+    pattern = r"(BMATE201|BPHYE202|BBEE203|BPWSK206|BKSKK207|BSFHK258|BESCK204B|BPLCK205).*?(\d+)\s+(\d+)\s+(\d+)\s+([PF])\s+\d{4}-\d{2}-\d{2}"
     matches = re.findall(pattern, text)
 
     subjects = []
@@ -110,14 +110,14 @@ def calculate_grade_point(marks):
 
 # ---------------- CREDIT MAP ----------------
 credit_map = {
-    "BMATE101": 4,
-    "BCHEE102": 4,
-    "BCEDK103": 3,
-    "BENGK106": 1,
-    "BICOK107": 1,
-    "BIDTK158": 1,
-    "BESCK104E": 3,
-    "BETCK105J": 3
+    "BMATE201": 4,
+    "BPHYE202": 4,
+    "BBEE203": 3,
+    "BKSKK207": 1,
+    "BSFHK258": 1,
+    "BPWSK207": 1,
+    "BESCK204B": 3,
+    "BPLCK205B": 3
 }
 
 # ---------------- MAIN LOGIC ----------------
@@ -125,7 +125,7 @@ if uploaded_file is not None:
     student_name, usn, subjects = extract_data_from_pdf(uploaded_file)
 
     if len(subjects) == 0:
-        st.error("No subjects detected. Please upload correct Semester 1 result PDF.")
+        st.error("No subjects detected. Please upload correct Semester 2 result PDF.")
     else:
         st.markdown(f"### 👤 Student Name: **{student_name}**")
         st.markdown(f"### 🆔 USN: **{usn}**")
@@ -219,5 +219,6 @@ if st.button("Search"):
     except Exception as e:
         st.error("Could not retrieve data.")
         st.write(e)
+
 
 
