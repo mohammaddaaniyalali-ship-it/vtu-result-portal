@@ -2,6 +2,9 @@ import streamlit as st
 import pdfplumber
 import re
 import pandas as pd
+import gspread
+import json
+from google.oauth2.service_account import Credentials
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="VTU Exam Result Portal", layout="centered")
@@ -36,6 +39,22 @@ st.markdown("""
 
 uploaded_file = st.file_uploader("Upload VTU Semester 1 Result PDF", type=["pdf"])
 
+# ---------------- GOOGLE SHEETS CONNECTION ----------------
+def connect_to_gsheet():
+    scope = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+
+    creds = Credentials.from_service_account_info(
+        json.loads(st.secrets["gcp_service_account"]["json"]),
+        scopes=scope
+    )
+
+    client = gspread.authorize(creds)
+    sheet = client.open("VTU_Results_Database").sheet1
+    return sheet
+
 # ---------------- PDF EXTRACTION ----------------
 def extract_data_from_pdf(pdf_file):
     text = ""
@@ -46,17 +65,14 @@ def extract_data_from_pdf(pdf_file):
             if page_text:
                 text += page_text + "\n"
 
-    # Clean broken newlines
     text = re.sub(r"\n+", " ", text)
 
-    # Extract Name and USN
     name_match = re.search(r"Student Name\s*:\s*([A-Z\s]+)", text)
     usn_match = re.search(r"University Seat Number\s*:\s*([A-Z0-9]+)", text)
 
     student_name = name_match.group(1).strip() if name_match else "Not Found"
     usn = usn_match.group(1).strip() if usn_match else "Not Found"
 
-    # Extract Subjects
     pattern = r"(BMATE101|BCHEE102|BCEDK103|BENGK106|BICOK107|BIDTK158|BESCK104E|BETCK105J).*?(\d+)\s+(\d+)\s+(\d+)\s+([PF])\s+\d{4}-\d{2}-\d{2}"
     matches = re.findall(pattern, text)
 
@@ -72,7 +88,6 @@ def extract_data_from_pdf(pdf_file):
         })
 
     return student_name, usn, subjects
-
 
 # ---------------- GRADE CALCULATION ----------------
 def calculate_grade_point(marks):
@@ -93,7 +108,6 @@ def calculate_grade_point(marks):
     else:
         return 0
 
-
 # ---------------- CREDIT MAP ----------------
 credit_map = {
     "BMATE101": 4,
@@ -106,7 +120,6 @@ credit_map = {
     "BETCK105J": 3
 }
 
-
 # ---------------- MAIN LOGIC ----------------
 if uploaded_file is not None:
     student_name, usn, subjects = extract_data_from_pdf(uploaded_file)
@@ -114,7 +127,6 @@ if uploaded_file is not None:
     if len(subjects) == 0:
         st.error("No subjects detected. Please upload correct Semester 1 result PDF.")
     else:
-        # Student Info Section
         st.markdown(f"### 👤 Student Name: **{student_name}**")
         st.markdown(f"### 🆔 USN: **{usn}**")
         st.markdown("---")
@@ -126,7 +138,7 @@ if uploaded_file is not None:
             code = sub["Code"]
             total_marks = sub["Total Marks"]
 
-            credit = credit_map[code]
+            credit = credit_map.get(code, 0)
             grade_point = calculate_grade_point(total_marks)
 
             sub["Credit"] = credit
@@ -157,3 +169,23 @@ if uploaded_file is not None:
                 </h2>
             </div>
         """, unsafe_allow_html=True)
+
+        # ---------------- SAVE TO GOOGLE SHEETS ----------------
+        try:
+            sheet = connect_to_gsheet()
+
+            if len(sheet.get_all_values()) == 0:
+                sheet.append_row(["Student Name", "USN", "SGPA"])
+
+            existing_data = sheet.get_all_records()
+            usn_list = [row["USN"] for row in existing_data]
+
+            if usn not in usn_list:
+                sheet.append_row([student_name, usn, round(sgpa, 2)])
+                st.success("✅ Data successfully saved to database.")
+            else:
+                st.info("ℹ This USN already exists in database. Not added again.")
+
+        except Exception as e:
+            st.error("❌ Could not connect to Google Sheets.")
+            st.write(e)
