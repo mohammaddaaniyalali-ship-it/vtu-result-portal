@@ -63,6 +63,10 @@ def extract_data_from_pdf(pdf_file):
     usn_match = re.search(r"University Seat Number\s*:\s*([A-Z0-9]+)", text)
 
     student_name = name_match.group(1).strip() if name_match else "Not Found"
+
+# Remove unwanted trailing single 'S'
+    if student_name.endswith(" S"):
+       student_name = student_name[:-2]
     usn = usn_match.group(1).strip() if usn_match else "Not Found"
 
     pattern = r"(BMATE201|BPHYE202|BBEE203|BPWSK206|BKSKK207|BSFHK258|BESCK204B|BPLCK205B).*?(\d+)\s+(\d+)\s+(\d+)\s+([PF])\s+\d{4}-\d{2}-\d{2}"
@@ -252,5 +256,6 @@ if search_button:
         except Exception as e:
             st.error("Could not retrieve data.")
             st.write(e)
+
 
 
