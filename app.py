@@ -206,7 +206,7 @@ if st.button("Search"):
 
                 st.success("Record Found ✅")
 
-                st.markdown(f"**Name:** {row['Name']}")
+                st.markdown(f"**Name:** {row['Student Name']}")
                 st.markdown(f"**USN:** {row['USN']}")
                 st.markdown(f"**SGPA:** {row['SGPA']}")
                 
@@ -219,4 +219,5 @@ if st.button("Search"):
     except Exception as e:
         st.error("Could not retrieve data.")
         st.write(e)
+
 
