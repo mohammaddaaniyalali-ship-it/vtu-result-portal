@@ -73,7 +73,7 @@ def extract_data_from_pdf(pdf_file):
     student_name = name_match.group(1).strip() if name_match else "Not Found"
     usn = usn_match.group(1).strip() if usn_match else "Not Found"
 
-    pattern = r"(BMATE201|BPHYE202|BBEE203|BPWSK206|BKSKK207|BSFHK258|BESCK204B|BPLCK205).*?(\d+)\s+(\d+)\s+(\d+)\s+([PF])\s+\d{4}-\d{2}-\d{2}"
+    pattern = r"(BMATE201|BPHYE202|BBEE203|BPWSK206|BKSKK207|BSFHK258|BESCK204B|BPLCK205B).*?(\d+)\s+(\d+)\s+(\d+)\s+([PF])\s+\d{4}-\d{2}-\d{2}"
     matches = re.findall(pattern, text)
 
     subjects = []
@@ -115,7 +115,7 @@ credit_map = {
     "BBEE203": 3,
     "BKSKK207": 1,
     "BSFHK258": 1,
-    "BPWSK207": 1,
+    "BPWSK206": 1,
     "BESCK204B": 3,
     "BPLCK205B": 3
 }
@@ -219,6 +219,7 @@ if st.button("Search"):
     except Exception as e:
         st.error("Could not retrieve data.")
         st.write(e)
+
 
 
 
