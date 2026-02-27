@@ -189,4 +189,34 @@ if uploaded_file is not None:
         except Exception as e:
             st.error("❌ Could not connect to Google Sheets.")
             st.write(e)
+st.markdown("## 🎓 Teacher Portal")
+
+search_usn = st.text_input("Enter USN to Retrieve Student Record")
+
+if st.button("Search"):
+
+    try:
+        sheet = connect_to_gsheet()
+        data = sheet.get_all_records()
+
+        found = False
+
+        for row in data:
+            if row["USN"] == search_usn.strip():
+
+                st.success("Record Found ✅")
+
+                st.markdown(f"**Name:** {row['Name']}")
+                st.markdown(f"**USN:** {row['USN']}")
+                st.markdown(f"**SGPA:** {row['SGPA']}")
+                
+                found = True
+                break
+
+        if not found:
+            st.error("No record found for this USN.")
+
+    except Exception as e:
+        st.error("Could not retrieve data.")
+        st.write(e)
 
