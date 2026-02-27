@@ -52,7 +52,7 @@ def connect_to_gsheet():
     )
 
     client = gspread.authorize(creds)
-    sheet = client.open("VTU_Results_Database").sheet1
+    sheet = client.open_by_key("1n6_KyoZAJxgzRrFluNFxF3-QQOqr3JYE_hG_dYzRGMw").sheet1
     return sheet
 
 # ---------------- PDF EXTRACTION ----------------
@@ -189,3 +189,4 @@ if uploaded_file is not None:
         except Exception as e:
             st.error("❌ Could not connect to Google Sheets.")
             st.write(e)
+
