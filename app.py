@@ -5,33 +5,25 @@ import pandas as pd
 import gspread
 import json
 from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="VTU Exam Result Portal", layout="centered")
 
-# ---------------- PREMIUM HEADER ----------------
+# ---------------- HEADER ----------------
 st.markdown("""
     <div style="
         background: linear-gradient(90deg, #1e1e1e, #2c2c2c);
         padding: 25px;
-        border-radius: 12px;
+        border-radius: 15px;
         text-align: center;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
-        margin-bottom: 25px;
+        box-shadow: 0px 6px 20px rgba(0,0,0,0.4);
+        margin-bottom: 30px;
     ">
-        <h1 style="
-            color: #f5f5f5;
-            font-size: 40px;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-        ">
+        <h1 style="color: #f5f5f5; font-size: 42px; letter-spacing: 2px;">
             VTU Exam Result Portal
         </h1>
-        <p style="
-            color: #dcdcdc;
-            font-size: 16px;
-            margin-top: 0px;
-        ">
+        <p style="color: #cccccc; font-size: 16px;">
             Semester 2 Academic Performance Dashboard
         </p>
     </div>
@@ -113,9 +105,9 @@ credit_map = {
     "BMATE201": 4,
     "BPHYE202": 4,
     "BBEE203": 3,
+    "BPWSK206": 1,
     "BKSKK207": 1,
     "BSFHK258": 1,
-    "BPWSK206": 1,
     "BESCK204B": 3,
     "BPLCK205B": 3
 }
@@ -154,72 +146,111 @@ if uploaded_file is not None:
 
         sgpa = total_weighted_points / total_credits
 
-        st.markdown("---")
-
         st.markdown(f"""
             <div style="
                 background: #f5f5f5;
-                padding: 20px;
-                border-radius: 10px;
+                padding: 25px;
+                border-radius: 12px;
                 text-align: center;
-                box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+                box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+                margin-top: 20px;
             ">
-                <h2 style="color: #1e1e1e; margin-bottom: 0;">
+                <h2 style="color: #1e1e1e;">
                     SGPA: {round(sgpa, 2)}
                 </h2>
             </div>
         """, unsafe_allow_html=True)
 
-        # ---------------- SAVE TO GOOGLE SHEETS ----------------
+        # -------- SAVE / UPDATE TO SHEET --------
         try:
             sheet = connect_to_gsheet()
+            records = sheet.get_all_records()
 
-            if len(sheet.get_all_values()) == 0:
-                sheet.append_row(["Student Name", "USN", "SGPA"])
+            usn_found = False
 
-            existing_data = sheet.get_all_records()
-            usn_list = [row["USN"] for row in existing_data]
+            for index, row in enumerate(records, start=2):
+                if row["USN"] == usn:
+                    sheet.update(f"C{index}", round(sgpa, 2))
+                    sheet.update(f"E{index}", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    usn_found = True
+                    st.info("🔄 Existing record updated.")
+                    break
 
-            if usn not in usn_list:
-                sheet.append_row([student_name, usn, round(sgpa, 2)])
-                st.success("✅ Data successfully saved to database.")
-            else:
-                st.info("ℹ This USN already exists in database. Not added again.")
+            if not usn_found:
+                sheet.append_row([
+                    student_name,
+                    usn,
+                    round(sgpa, 2),
+                    "Semester 2",
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                ])
+                st.success("✅ New record added to database.")
 
         except Exception as e:
             st.error("❌ Could not connect to Google Sheets.")
             st.write(e)
-st.markdown("## 🎓 Teacher Portal")
 
-search_usn = st.text_input("Enter USN to Retrieve Student Record")
+# ---------------- TEACHER PORTAL ----------------
+st.markdown("""
+    <div style="
+        margin-top: 60px;
+        padding: 30px;
+        background: linear-gradient(135deg, #2c2c2c, #1e1e1e);
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0px 6px 20px rgba(0,0,0,0.4);
+    ">
+        <h2 style="color: #f5f5f5;">
+            🎓 Teacher Portal
+        </h2>
+        <p style="color: #cccccc;">
+            Retrieve student academic record
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 
-if st.button("Search"):
+st.markdown("<br>", unsafe_allow_html=True)
 
-    try:
-        sheet = connect_to_gsheet()
-        data = sheet.get_all_records()
+col1, col2, col3 = st.columns([1,2,1])
 
-        found = False
+with col2:
+    search_usn = st.text_input("Enter USN", key="teacher_usn")
+    search_button = st.button("🔎 Search Record", use_container_width=True)
 
-        for row in data:
-            if row["USN"] == search_usn.strip():
+if search_button:
+    with st.spinner("Searching database..."):
+        try:
+            sheet = connect_to_gsheet()
+            data = sheet.get_all_records()
 
-                st.success("Record Found ✅")
+            found = False
 
-                st.markdown(f"**Name:** {row['Student Name']}")
-                st.markdown(f"**USN:** {row['USN']}")
-                st.markdown(f"**SGPA:** {row['SGPA']}")
-                
-                found = True
-                break
+            for row in data:
+                if row["USN"] == search_usn.strip():
+                    st.markdown(f"""
+                        <div style="
+                            background: #f5f5f5;
+                            padding: 25px;
+                            border-radius: 12px;
+                            text-align: center;
+                            box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+                            margin-top: 20px;
+                        ">
+                            <h3>Student Record</h3>
+                            <p><strong>Name:</strong> {row['Student Name']}</p>
+                            <p><strong>USN:</strong> {row['USN']}</p>
+                            <p><strong>SGPA:</strong> {row['SGPA']}</p>
+                            <p><strong>Semester:</strong> {row['Semester']}</p>
+                            <p><strong>Last Updated:</strong> {row['Timestamp']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-        if not found:
-            st.error("No record found for this USN.")
+                    found = True
+                    break
 
-    except Exception as e:
-        st.error("Could not retrieve data.")
-        st.write(e)
+            if not found:
+                st.error("No record found for this USN.")
 
-
-
-
+        except Exception as e:
+            st.error("Could not retrieve data.")
+            st.write(e)
